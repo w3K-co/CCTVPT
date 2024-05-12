@@ -1,3 +1,5 @@
+// Let's do this...
+var colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#00FFFF', '#FF00FF', '#C0C0C0', '#808080', '#800000', '#808000', '#008000', '#800080', '#008080', '#000080', '#4B0082', '#7CFC00', '#ADFF2F', '#7FFF00', '#D2691E', '#8B4513', '#A52A2A', '#DEB887', '#5F9EA0', '#7F007F', '#D02090', '#FFD700', '#8B008B', '#556B2F', '#FF8C00', '#9932CC', '#8B0000', '#E9967A'];
 var toolsEl = document.getElementById('tools');
 var cameras = [];
 var currentCam = null;
@@ -66,6 +68,8 @@ function calcFov(sensorSize, focalLength) {
  * Set the current camera in the tools panel
  */
 function setCurrent(cam) {
+    var colorPaletteHtml = colors.map(color => `<div class="color-square" style="background-color: ${color};" onclick="changeColor('${color}')"></div>`).join('');
+
     toolsEl.innerHTML = `
         ${cam.position.lat}<br>${cam.position.lng}
         <br>
@@ -76,6 +80,8 @@ function setCurrent(cam) {
         <br>
         <br>Range: <input type="range" min="1" max="100" id="fld-range" value="${cam.range}"> meters
         <br>FOV: <input type="range" min="1" max="359" id="fld-fov" value="${cam.fov}"> degrees
+        <br>
+        <br>Color: <div id="color-palette">${colorPaletteHtml}</div>
     `;
 
     document.getElementById('fld-angle').addEventListener('input', (e) => { cam.angle = parseFloat(e.target.value); renderCam(cam) });
@@ -84,6 +90,22 @@ function setCurrent(cam) {
 
     currentCam = cam;
 }
+
+
+
+function changeColor(color) {
+    if (currentCam) {
+        currentCam.ndPolygon.setStyle({
+            color: color,
+            fillColor: color
+        });
+        currentCam.ndCentre.setStyle({
+            color: color,
+            fillColor: color
+        });
+    }
+}
+
 
 function renderCam(cam) {
     var coords = buildPolyCoords(cam.position, cam.angle, cam.fov, cam.range);
@@ -99,7 +121,7 @@ function startMapCoords() {
     if (lat && lng && z) {
         return [lat, lng, z];
     } else {
-        return [-34.9285, 138.6007, 12];
+        return [26.528691713882818, -80.0643789768219, 18];
     }
 }
 
@@ -113,6 +135,19 @@ function setUrlCoords(map) {
 }
 
 
+// Function to remove the current camera
+function removeCurrentCamera() {
+    if (currentCam) {
+        currentCam.ndPolygon.remove();
+        currentCam.ndCentre.remove();
+        cameras = cameras.filter(cam => cam !== currentCam);
+        currentCam = null;
+        toolsEl.innerHTML = '';
+    }
+}
+
+
+// Initialize Program
 function init() {
     // OpenStreetMap
     var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -146,4 +181,13 @@ function init() {
 }
 
 
+// Call 'saveState' whenever the state changes and monitor DEL key at the same time.
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Delete') {
+        removeCurrentCamera();
+    }
+});
+
+
+// Rock N Roll
 init();
